@@ -1,0 +1,169 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Users {
+  id            String          @id @default(uuid()) @db.VarChar(36) // Menggunakan VARCHAR untuk UUID
+  fullname      String
+  username      String          @unique
+  password      String
+  role          String
+  created_at    DateTime        @default(now())
+  items         Items[]         @relation("UserItems")
+  suppliers     Suppliers[]     @relation("UserSuppliers")
+  itemPo        ItemPo[]        @relation("UserItemPo")
+  inventory     Inventory[]     @relation("UserInventory")
+}
+
+model Items {
+  id              Int             @id @default(autoincrement())
+  itemCode        String          @unique
+  zahirCode       String?
+  itemDescription String?
+  unit            Units
+  group           Group
+  classification  Classifications
+  price           Float?
+  stock           Int?
+  image           String?
+  itemStatus      ItemStatus?
+  createBy        String          @db.VarChar(36)
+  updateBy        String          @db.VarChar(36)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user      Users?      @relation("UserItems", fields: [createBy], references: [id])
+  inventory Inventory[]
+  itemPo    ItemPo[]
+}
+
+model Suppliers {
+  supplierId   Int      @id @default(autoincrement())
+  supplierName String
+  address      String?
+  phone        String?
+  email        String?
+  createBy     String   @db.VarChar(36)
+  updateBy     String   @db.VarChar(36)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  stock  Inventory[]
+  ItemPo ItemPo[]
+  user   Users?      @relation("UserSuppliers", fields: [createBy], references: [id])
+}
+
+model ItemPo {
+  id          Int           @id @default(autoincrement())
+  idPo        Int
+  idSupplier  Int
+  itemCodeId  Int
+  qty         Int
+  description String
+  createBy    String?       @db.VarChar(36)
+  updateBy    String?       @db.VarChar(36)
+  status      Status
+  items       Items         @relation(fields: [itemCodeId], references: [id])
+  suppliers   Suppliers     @relation(fields: [idSupplier], references: [supplierId])
+  user        Users?        @relation("UserItemPo", fields: [createBy], references: [id])
+}
+
+model Inventory {
+  id           Int          @id @default(autoincrement())
+  date         DateTime?
+  idSupplier   Int
+  itemCodeId   Int
+  items        Items        @relation(fields: [itemCodeId], references: [id])
+  suppliers    Suppliers    @relation(fields: [idSupplier], references: [supplierId])
+  price        Float?
+  qty_in       Int? // Jumlah barang masuk
+  qty_out      Int? // Jumlah barang keluar
+  image        String?
+  productionId Int?
+  description  String?
+  createBy     String       @db.VarChar(36)
+  updateBy     String       @db.VarChar(36)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  productions  Productions? @relation(fields: [productionId], references: [id])
+  user         Users?       @relation("UserInventory", fields: [createBy], references: [id])
+}
+
+model Employee {
+  id       Int     @id @default(autoincrement())
+  fullName String
+  address  String?
+  phone    String?
+  position String?
+
+  productions Productions[]
+}
+
+model Building {
+  id      Int    @id @default(autoincrement())
+  machine String
+
+  buildingName BuildingName
+  productions  Productions[]
+}
+
+model Shift {
+  id          Int           @id @default(autoincrement())
+  shiftName   BuildingName
+  productions Productions[]
+}
+
+model Productions {
+  id         Int @id @default(autoincrement())
+  employeeId Int
+  buildingId Int
+  shiftId    Int
+
+  employee  Employee    @relation(fields: [employeeId], references: [id])
+  building  Building    @relation(fields: [buildingId], references: [id])
+  shift     Shift       @relation(fields: [shiftId], references: [id])
+  inventory Inventory[]
+}
+
+enum BuildingName {
+  A
+  B
+  C
+}
+
+enum Units {
+  Pcs
+  Kg
+}
+
+enum Group {
+  Lokal
+  Import
+  Random
+}
+
+enum Classifications {
+  Sparepart
+  Assets
+  Consumable
+  Bearing
+  Bolt
+  Belt
+}
+
+enum Status {
+  Appoved
+  Rejected
+  Pending
+}
+
+enum ItemStatus {
+  Active
+  InActive
+  NotFound
+}
