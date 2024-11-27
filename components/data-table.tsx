@@ -1,12 +1,13 @@
 "use client";
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Close';
+import Button, { ButtonProps } from '@mui/material/Button';
 import {
   GridRowsProp,
   GridRowModesModel,
@@ -20,8 +21,13 @@ import {
   GridRowModel,
   GridRowEditStopReasons,
   GridSlotProps,
+  useGridApiContext,
+  GridCsvExportOptions,
+  GridCsvGetRowsToExportParams,
+  gridExpandedSortedRowIdsSelector,
 } from '@mui/x-data-grid';
-import { Paper, Typography } from '@mui/material';
+import { createSvgIcon, Paper, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 type FullFeaturedCrudGridProps = {
   columns: GridColDef[];
@@ -39,10 +45,16 @@ declare module '@mui/x-data-grid' {
     defaultNewRow: (id: GridRowId) => GridRowModel; // Tambahkan properti ini
   }
 }
-
+const ExportIcon = createSvgIcon(
+  <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z" />,
+  'SaveAlt',
+);
+const getFilteredRows = ({ apiRef }: GridCsvGetRowsToExportParams) =>
+  gridExpandedSortedRowIdsSelector(apiRef);
 
 function EditToolbar(props: GridSlotProps['toolbar']) {
   const { setRows, setRowModesModel, defaultNewRow } = props;
+  const apiRef = useGridApiContext();
 
   const handleClick = () => {
     const id = Math.random().toString(36).substr(2, 9); // Generate random ID
@@ -55,11 +67,23 @@ function EditToolbar(props: GridSlotProps['toolbar']) {
       [id]: { mode: GridRowModes.Edit, fieldToFocus: 'name' },
     }));
   };
-
+  const handleExport = (options: GridCsvExportOptions) =>
+    apiRef.current.exportDataAsCsv(options);
+  const buttonBaseProps: ButtonProps = {
+    color: 'primary',
+    size: 'small',
+    startIcon: <ExportIcon />,
+  };
   return (
     <GridToolbarContainer>
       <Button color="primary" startIcon={<AddIcon />} onClick={handleClick}>
         Add record
+      </Button>
+      <Button
+        {...buttonBaseProps}
+        onClick={() => handleExport({ getRowsToExport: getFilteredRows })}
+      >
+        Filtered rows
       </Button>
     </GridToolbarContainer>
   );
@@ -73,7 +97,7 @@ export default function FullFeaturedCrudGrid({
 }: FullFeaturedCrudGridProps) {
   const [rows, setRows] = React.useState(initialRows);
   const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>({});
-
+  const router = useRouter();
   const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
     if (params.reason === GridRowEditStopReasons.rowFocusOut) {
       event.defaultMuiPrevented = true;
@@ -83,7 +107,11 @@ export default function FullFeaturedCrudGrid({
   const handleEditClick = (id: GridRowId) => () => {
     setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
   };
-
+  const handleViewClick = (id: GridRowId) => () => {
+    // setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
+    router.push(`/inventory/${id}`);
+  };
+  
   const handleSaveClick = (id: GridRowId) => () => {
     setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
     console.log(rows);
@@ -141,6 +169,12 @@ export default function FullFeaturedCrudGrid({
       }
 
       return [
+        <GridActionsCellItem
+          icon={<VisibilityIcon />}
+          label="View"
+          onClick={handleViewClick(id)}
+          color="inherit"
+        />,
         <GridActionsCellItem
           icon={<EditIcon />}
           label="Edit"

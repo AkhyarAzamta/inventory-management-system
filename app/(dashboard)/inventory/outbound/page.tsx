@@ -11,6 +11,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Close';
+import IconBreadcrumbs from '@/components/bread-crumbs';
 
 
 // Definisikan kolom dan data yang akan ditampilkan
@@ -86,7 +87,6 @@ const rows: GridRowsProp = [
 export default function Page() {
   return (
     <div>
-      <h1>Data Grid</h1>
       <FullFeaturedCrudGrid
         columns={columns}
         rows={rows}

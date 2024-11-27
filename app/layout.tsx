@@ -9,7 +9,7 @@ import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
 import StoreIcon from '@mui/icons-material/Store';
 
-const NAVIGATION: Navigation = [
+export const NAVIGATION: Navigation = [
   {
     kind: 'header',
     title: 'Main items',
