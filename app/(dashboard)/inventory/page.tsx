@@ -2,30 +2,31 @@
 import React from 'react';
 import { GridRowsProp, GridColDef } from '@mui/x-data-grid';
 import FullFeaturedCrudGrid from '@/components/data-table'; // Sesuaikan dengan path komponen Anda
-import {
-  randomCreatedDate,
-  randomTraderName,
-  randomId
-} from '@mui/x-data-grid-generator';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/DeleteOutlined';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Close';
+import CircularProgress from '@mui/material/CircularProgress';
+import Loading from '@/components/loading';
+const initialRows: GridRowsProp = [];
 
+// Fungsi untuk mengakses API
+async function fetchRows(): Promise<GridRowsProp> {
+  const response = await fetch("/api/inventory");
+  const data = await response.json();
 
-// Definisikan kolom dan data yang akan ditampilkan
-// const columns: GridColDef[] = [
-//   { field: 'name', headerName: 'Name', width: 180, editable: true },
-//   { field: 'age', headerName: 'Age', type: 'number', width: 100, editable: true },
-//   { field: 'role', headerName: 'Role', width: 180, editable: true },
-//   // Tambahkan kolom lain sesuai kebutuhan
-// ];
+  return data.map((row: any) => ({
+    id: row.id, // Pastikan id ada
+    itemCode: row.itemCode,
+    zahirCode: row.zahirCode,
+    itemDescription: row.itemDescription,
+    unit: row.unit,
+    group: row.group,
+    classification: row.classification,
+    stock: row.stock,
+    image: row.image,
+    createdBy: row.createBy,
+    updatedBy: row.updateBy,
+    createdAt: new Date(row.createdAt),
+  }));
+}
 
-// const rows: GridRowsProp = [
-//   { id: 1, name: 'John Doe', age: 30, role: 'Market' },
-//   { id: 2, name: 'Jane Smith', age: 25, role: 'Finance' },
-//   // Tambahkan data lain sesuai kebutuhan
-// ];
 
 const columns: GridColDef[] = [
   { field: 'itemCode', headerName: 'ItemCode', width: 180, editable: true },
@@ -108,28 +109,17 @@ const columns: GridColDef[] = [
   //   },
   // },
 ];
-
-const rows: GridRowsProp = [
-  {
-    id: randomId(),
-    itemCode: randomTraderName(),
-    zahirCode: randomTraderName(),
-    itemDescription: randomTraderName(),
-    unit: randomTraderName(),
-    group: randomTraderName(),
-    classification: randomTraderName(),
-    inbound: 2,
-    outbound: 2,
-    stock: 2,
-    image: randomTraderName(),
-    createdBy: 'admin',
-    updatedBy: 'admin',
-    createdAt: randomCreatedDate(),
-    updatedAt: randomCreatedDate()
+export default function Inventory() {
+  const [rows, setRows] = React.useState<GridRowsProp>(initialRows);
+  React.useEffect(() => {
+    fetchRows().then(data => {
+      console.log("Rows set to state:", data);
+      setRows(data);
+    });
+  }, []);
+  if (rows.length === 0) {
+    return <Loading />; // Loading state
   }
-];
-
-export default function Page() {
   return (
     <div>
       <h1>Data Grid</h1>

@@ -16,7 +16,6 @@ model Users {
   created_at    DateTime        @default(now())
   items         Items[]         @relation("UserItems")
   suppliers     Suppliers[]     @relation("UserSuppliers")
-  itemPo        ItemPo[]        @relation("UserItemPo")
   inventory     Inventory[]     @relation("UserInventory")
 }
 
@@ -39,7 +38,6 @@ model Items {
 
   user      Users?      @relation("UserItems", fields: [createBy], references: [id])
   inventory Inventory[]
-  itemPo    ItemPo[]
 }
 
 model Suppliers {
@@ -54,23 +52,7 @@ model Suppliers {
   updatedAt    DateTime @updatedAt
 
   stock  Inventory[]
-  ItemPo ItemPo[]
   user   Users?      @relation("UserSuppliers", fields: [createBy], references: [id])
-}
-
-model ItemPo {
-  id          Int           @id @default(autoincrement())
-  idPo        Int
-  idSupplier  Int
-  itemCodeId  Int
-  qty         Int
-  description String
-  createBy    String?       @db.VarChar(36)
-  updateBy    String?       @db.VarChar(36)
-  status      Status
-  items       Items         @relation(fields: [itemCodeId], references: [id])
-  suppliers   Suppliers     @relation(fields: [idSupplier], references: [supplierId])
-  user        Users?        @relation("UserItemPo", fields: [createBy], references: [id])
 }
 
 model Inventory {
@@ -100,6 +82,7 @@ model Employee {
   address  String?
   phone    String?
   position String?
+  shift    Shift
 
   productions Productions[]
 }
@@ -107,26 +90,18 @@ model Employee {
 model Building {
   id      Int    @id @default(autoincrement())
   machine String
-
   buildingName BuildingName
+
   productions  Productions[]
 }
 
-model Shift {
-  id          Int           @id @default(autoincrement())
-  shiftName   BuildingName
-  productions Productions[]
-}
-
 model Productions {
-  id         Int @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   employeeId Int
   buildingId Int
-  shiftId    Int
 
   employee  Employee    @relation(fields: [employeeId], references: [id])
   building  Building    @relation(fields: [buildingId], references: [id])
-  shift     Shift       @relation(fields: [shiftId], references: [id])
   inventory Inventory[]
 }
 
@@ -134,6 +109,11 @@ enum BuildingName {
   A
   B
   C
+}
+
+enum Shift {
+  A
+  B
 }
 
 enum Units {

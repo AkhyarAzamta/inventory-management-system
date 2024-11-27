@@ -49,21 +49,6 @@ CREATE TABLE `Suppliers` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `ItemPo` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `idPo` INTEGER NOT NULL,
-    `idSupplier` INTEGER NOT NULL,
-    `itemCodeId` INTEGER NOT NULL,
-    `qty` INTEGER NOT NULL,
-    `description` VARCHAR(191) NOT NULL,
-    `createBy` VARCHAR(36) NULL,
-    `updateBy` VARCHAR(36) NULL,
-    `status` ENUM('Appoved', 'Rejected', 'Pending') NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `Inventory` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `date` DATETIME(3) NULL,
@@ -90,6 +75,7 @@ CREATE TABLE `Employee` (
     `address` VARCHAR(191) NULL,
     `phone` VARCHAR(191) NULL,
     `position` VARCHAR(191) NULL,
+    `shift` ENUM('A', 'B') NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -104,19 +90,10 @@ CREATE TABLE `Building` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Shift` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `shiftName` ENUM('A', 'B', 'C') NOT NULL,
-
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `Productions` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `employeeId` INTEGER NOT NULL,
     `buildingId` INTEGER NOT NULL,
-    `shiftId` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -126,15 +103,6 @@ ALTER TABLE `Items` ADD CONSTRAINT `Items_createBy_fkey` FOREIGN KEY (`createBy`
 
 -- AddForeignKey
 ALTER TABLE `Suppliers` ADD CONSTRAINT `Suppliers_createBy_fkey` FOREIGN KEY (`createBy`) REFERENCES `Users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `ItemPo` ADD CONSTRAINT `ItemPo_itemCodeId_fkey` FOREIGN KEY (`itemCodeId`) REFERENCES `Items`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `ItemPo` ADD CONSTRAINT `ItemPo_idSupplier_fkey` FOREIGN KEY (`idSupplier`) REFERENCES `Suppliers`(`supplierId`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `ItemPo` ADD CONSTRAINT `ItemPo_createBy_fkey` FOREIGN KEY (`createBy`) REFERENCES `Users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_itemCodeId_fkey` FOREIGN KEY (`itemCodeId`) REFERENCES `Items`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -153,6 +121,3 @@ ALTER TABLE `Productions` ADD CONSTRAINT `Productions_employeeId_fkey` FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE `Productions` ADD CONSTRAINT `Productions_buildingId_fkey` FOREIGN KEY (`buildingId`) REFERENCES `Building`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Productions` ADD CONSTRAINT `Productions_shiftId_fkey` FOREIGN KEY (`shiftId`) REFERENCES `Shift`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
