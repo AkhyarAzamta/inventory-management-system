@@ -27,7 +27,8 @@ import {
   gridExpandedSortedRowIdsSelector,
 } from '@mui/x-data-grid';
 import { createSvgIcon, Paper, Typography } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import axios from 'axios';
 
 type FullFeaturedCrudGridProps = {
   columns: GridColDef[];
@@ -55,16 +56,17 @@ const getFilteredRows = ({ apiRef }: GridCsvGetRowsToExportParams) =>
 function EditToolbar(props: GridSlotProps['toolbar']) {
   const { setRows, setRowModesModel, defaultNewRow } = props;
   const apiRef = useGridApiContext();
-
+const pathname = usePathname();
   const handleClick = () => {
     const id = Math.random().toString(36).substr(2, 9); // Generate random ID
+    console.log(pathname)
     setRows((oldRows) => [
       ...oldRows,
       defaultNewRow(id), // Use the reusable function
     ]);
     setRowModesModel((oldModel) => ({
       ...oldModel,
-      [id]: { mode: GridRowModes.Edit, fieldToFocus: 'name' },
+      [id]: { mode: GridRowModes.Edit, fieldToFocus: 'itemCode' },
     }));
   };
   const handleExport = (options: GridCsvExportOptions) =>
@@ -108,18 +110,21 @@ export default function FullFeaturedCrudGrid({
     setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
   };
   const handleViewClick = (id: GridRowId) => () => {
-    // setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
     router.push(`/inventory/${id}`);
   };
-  
-  const handleSaveClick = (id: GridRowId) => () => {
+  const handleSaveClick = (id: GridRowId) => async () => {
+    // console.log({ ...rowModesModel, [id]: { mode: GridRowModes.View } })
     setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
-    console.log(rows);
   };
-
-  const handleDeleteClick = (id: GridRowId) => () => {
-    setRows(rows.filter((row) => row.id !== id));
-  };
+  const handleDeleteClick = (id: GridRowId) => async () => {
+    try {
+      await axios.delete(`/api/inventory/${id}`); // Sesuaikan endpoint
+      setRows(rows.filter((row) => row.id !== id)); // Hapus dari UI hanya jika berhasil
+      console.log(`Row ${id} deleted successfully.`);
+    } catch (error) {
+      console.error(`Error deleting row ${id}:`, error);
+    }
+  };  
 
   const handleCancelClick = (id: GridRowId) => () => {
     setRowModesModel({
@@ -133,9 +138,29 @@ export default function FullFeaturedCrudGrid({
     }
   };
 
-  const processRowUpdate = (newRow: GridRowModel) => {
-    const updatedRow = { ...newRow, isNew: false };
-    setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
+  const processRowUpdate = async (newRow: GridRowModel) => {
+    const updatedRow = { ...newRow };
+
+    if (newRow.isNew === true) {
+      const response = await axios.post('/api/inventory', updatedRow);
+      // console.log('ini newRow nya ya: ', newRow);
+      // console.log('ini updatedRow nya ya: ', updatedRow);
+      // console.log('ini response nya ya: ', response.data);
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === newRow.id ? { ...response.data, isNew: false, id: response.data.id, createdAt: new Date(response.data.createdAt) } : row
+        )
+      );
+    } else {
+      // const response = await axios.put(`/api/inventory/${newRow.id}`, updatedRow);
+      // console.log('ini newRow nya ya: ', newRow);
+      // console.log('ini updatedRow nya ya: ', updatedRow);
+      // console.log('ini response nya ya: ', response.data);
+      setRows((prevRows) =>
+        prevRows.map((row) => (row.id === newRow.id ? updatedRow : row))
+      );
+    }
+
     return updatedRow;
   };
 
@@ -151,7 +176,6 @@ export default function FullFeaturedCrudGrid({
     cellClassName: 'actions',
     getActions: ({ id }) => {
       const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
-
       if (isInEditMode) {
         return [
           <GridActionsCellItem

@@ -10,7 +10,6 @@ const initialRows: GridRowsProp = [];
 async function fetchRows(): Promise<GridRowsProp> {
   const response = await fetch("/api/inventory");
   const data = await response.json();
-
   return data.map((row: any) => ({
     id: row.id, // Pastikan id ada
     itemCode: row.itemCode,
@@ -26,8 +25,6 @@ async function fetchRows(): Promise<GridRowsProp> {
     createdAt: new Date(row.createdAt),
   }));
 }
-
-
 const columns: GridColDef[] = [
   { field: 'itemCode', headerName: 'ItemCode', width: 180, editable: true },
   {
@@ -51,12 +48,10 @@ const columns: GridColDef[] = [
     width: 220,
     editable: true,
     type: 'singleSelect',
-    valueOptions: ['Market', 'Finance', 'Development'],
+    valueOptions: ['Pcs', 'Kg'],
   },
-  { field: 'group', headerName: 'Group', width: 180, editable: true },
-  { field: 'classification', headerName: 'Classifications', width: 180, editable: true },
-  { field: 'inbound', headerName: 'Inbound', type: 'number', width: 180, editable: true },
-  { field: 'outbound', headerName: 'Outbound', type: 'number', width: 180, editable: true },
+  { field: 'group', headerName: 'Group', width: 180, editable: true, type: 'singleSelect', valueOptions: ['Lokal', 'Import', 'Random']},
+  { field: 'classification', headerName: 'Classifications', width: 180, editable: true, type: 'singleSelect', valueOptions: ['Sparepart', 'Consumable', 'Assets'] },
   { field: 'stock', headerName: 'Stock', type: 'number', width: 180, editable: true },
   { field: 'image', headerName: 'Image', width: 180, editable: true },
   { field: 'createdBy', headerName: 'Created By', width: 180, editable: true },
@@ -126,7 +121,21 @@ export default function Inventory() {
       <FullFeaturedCrudGrid
         columns={columns}
         rows={rows}
-        defaultNewRow={(id) => ({ id, itemCode: '', zahirCode: '', itemDescription: '', unit: '', group: '', classification: '', inbound: '', outbound: '', stock: '', image: '', createdBy: '', updatedBy: '', createdAt: '', isNew: true })}
+        defaultNewRow={(id) => ({ 
+          id, 
+          itemCode: '',
+          zahirCode: '', 
+          itemDescription: '', 
+          unit: '', 
+          group: '', 
+          classification: '', 
+          stock: '', 
+          image: '', 
+          createdBy: '', 
+          updatedBy: '', 
+          createdAt: '', 
+          isNew: true 
+        })}
         title='Inventory'
       />
     </div>

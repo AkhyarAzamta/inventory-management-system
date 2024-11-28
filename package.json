@@ -19,13 +19,15 @@
     "@mui/x-data-grid-generator": "^7.22.3",
     "@prisma/client": "^5.22.0",
     "@toolpad/core": "^0.10.0",
+    "axios": "^1.7.8",
     "next": "15.0.3",
     "next-auth": "5.0.0-beta.25",
     "prisma": "^5.22.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "styled-components": "^6.1.13",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zustand": "^5.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
