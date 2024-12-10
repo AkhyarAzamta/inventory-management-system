@@ -8,15 +8,15 @@ generator client {
 }
 
 model Users {
-  id            String          @id @default(uuid()) @db.VarChar(36) // Menggunakan VARCHAR untuk UUID
-  fullname      String
-  username      String          @unique
-  password      String
-  role          String
-  created_at    DateTime        @default(now())
-  items         Items[]         @relation("UserItems")
-  suppliers     Suppliers[]     @relation("UserSuppliers")
-  inventory     Inventory[]     @relation("UserInventory")
+  id         String      @id @default(uuid()) @db.VarChar(36) // Menggunakan VARCHAR untuk UUID
+  fullname   String
+  email      String      @unique
+  password   String
+  role       String
+  created_at DateTime    @default(now())
+  // items      Items[]     @relation("UserItems")
+  suppliers  Suppliers[] @relation("UserSuppliers")
+  inventory  Inventory[] @relation("UserInventory")
 }
 
 model Items {
@@ -33,11 +33,11 @@ model Items {
   itemStatus      ItemStatus?
   createBy        String          @db.VarChar(36)
   updateBy        String          @db.VarChar(36)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  // createdAt       DateTime        @default(now())
+  // updatedAt       DateTime        @updatedAt
 
-  user      Users?      @relation("UserItems", fields: [createBy], references: [id])
-  inventory Inventory[]
+  // user      Users?      @relation("UserItems", fields: [createBy], references: [id])
+  // inventory Inventory[]
 }
 
 model Suppliers {
@@ -51,8 +51,8 @@ model Suppliers {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  stock  Inventory[]
-  user   Users?      @relation("UserSuppliers", fields: [createBy], references: [id])
+  stock Inventory[]
+  user  Users?      @relation("UserSuppliers", fields: [createBy], references: [id])
 }
 
 model Inventory {
@@ -60,7 +60,7 @@ model Inventory {
   date         DateTime?
   idSupplier   Int
   itemCodeId   Int
-  items        Items        @relation(fields: [itemCodeId], references: [id])
+  // items        Items        @relation(fields: [itemCodeId], references: [id])
   suppliers    Suppliers    @relation(fields: [idSupplier], references: [supplierId])
   price        Float?
   qty_in       Int? // Jumlah barang masuk
@@ -76,7 +76,7 @@ model Inventory {
   user         Users?       @relation("UserInventory", fields: [createBy], references: [id])
 }
 
-model Employee {
+model Employees {
   id       Int     @id @default(autoincrement())
   fullName String
   address  String?
@@ -88,19 +88,19 @@ model Employee {
 }
 
 model Building {
-  id      Int    @id @default(autoincrement())
-  machine String
+  id           Int          @id @default(autoincrement())
+  machine      String
   buildingName BuildingName
 
-  productions  Productions[]
+  productions Productions[]
 }
 
 model Productions {
-  id         Int    @id @default(autoincrement())
+  id         Int @id @default(autoincrement())
   employeeId Int
   buildingId Int
 
-  employee  Employee    @relation(fields: [employeeId], references: [id])
+  employee  Employees    @relation(fields: [employeeId], references: [id])
   building  Building    @relation(fields: [buildingId], references: [id])
   inventory Inventory[]
 }

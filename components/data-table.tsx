@@ -29,6 +29,10 @@ import {
 import { createSvgIcon, Paper, Typography } from '@mui/material';
 import { usePathname, useRouter } from 'next/navigation';
 import axios from 'axios';
+import UploadButton from './atoms/upload-button';
+import { uploadImage } from '@/utils/file-uploader';
+import Image from 'next/image';
+// import InputFileUpload from './atoms/upload-image';
 
 type FullFeaturedCrudGridProps = {
   columns: GridColDef[];
@@ -53,10 +57,11 @@ const ExportIcon = createSvgIcon(
 const getFilteredRows = ({ apiRef }: GridCsvGetRowsToExportParams) =>
   gridExpandedSortedRowIdsSelector(apiRef);
 
+
 function EditToolbar(props: GridSlotProps['toolbar']) {
+  const pathname = usePathname();
   const { setRows, setRowModesModel, defaultNewRow } = props;
   const apiRef = useGridApiContext();
-const pathname = usePathname();
   const handleClick = () => {
     const id = Math.random().toString(36).substr(2, 9); // Generate random ID
     console.log(pathname)
@@ -100,6 +105,7 @@ export default function FullFeaturedCrudGrid({
   const [rows, setRows] = React.useState(initialRows);
   const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>({});
   const router = useRouter();
+  const pathname = usePathname();
   const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
     if (params.reason === GridRowEditStopReasons.rowFocusOut) {
       event.defaultMuiPrevented = true;
@@ -110,7 +116,8 @@ export default function FullFeaturedCrudGrid({
     setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
   };
   const handleViewClick = (id: GridRowId) => () => {
-    router.push(`/inventory/${id}`);
+    const data = rows.find((row) => row.id === id);
+    router.push(`/inventory/${data!.itemCode}`);
   };
   const handleSaveClick = (id: GridRowId) => async () => {
     // console.log({ ...rowModesModel, [id]: { mode: GridRowModes.View } })
@@ -139,34 +146,49 @@ export default function FullFeaturedCrudGrid({
   };
 
   const processRowUpdate = async (newRow: GridRowModel) => {
-    const updatedRow = { ...newRow };
-
-    if (newRow.isNew === true) {
-      const response = await axios.post('/api/inventory', updatedRow);
-      // console.log('ini newRow nya ya: ', newRow);
-      // console.log('ini updatedRow nya ya: ', updatedRow);
-      // console.log('ini response nya ya: ', response.data);
-      setRows((prevRows) =>
-        prevRows.map((row) =>
-          row.id === newRow.id ? { ...response.data, isNew: false, id: response.data.id, createdAt: new Date(response.data.createdAt) } : row
-        )
-      );
-    } else {
-      // const response = await axios.put(`/api/inventory/${newRow.id}`, updatedRow);
-      // console.log('ini newRow nya ya: ', newRow);
-      // console.log('ini updatedRow nya ya: ', updatedRow);
-      // console.log('ini response nya ya: ', response.data);
-      setRows((prevRows) =>
-        prevRows.map((row) => (row.id === newRow.id ? updatedRow : row))
-      );
+    try {
+      if (newRow.isNew) {
+        const response = await axios.post('/api/inventory', newRow);
+        setRows((prevRows) =>
+          prevRows.map((row) =>
+            row.id === newRow.id
+              ? { ...response.data, isNew: false }
+              : row
+          )
+        );
+        console.log(response);
+        console.log(newRow);
+      } else {
+        await axios.put(`/api/inventory/${newRow.id}`, newRow);
+        setRows((prevRows) =>
+          prevRows.map((row) => (row.id === newRow.id ? newRow : row))
+        );
+      }
+      return newRow;
+    } catch (error) {
+      console.error('Error updating row:', error);
+      throw error;
     }
-
-    return updatedRow;
   };
 
   const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
     setRowModesModel(newRowModesModel);
   };
+  const handleImageUpload = async (id: GridRowId, file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('pathname', pathname);
+      console.log(formData, id)
+      const response = await axios.post('/api/upload', formData);
+      console.log(response);
+      setRows((prevRows) =>
+        prevRows.map((row) => (row.id === id ? { ...row, image: response.data } : row))
+      );
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
+  }
 
   const actionsColumn: GridColDef = {
     field: 'actions',
@@ -213,9 +235,54 @@ export default function FullFeaturedCrudGrid({
         />,
       ];
     },
+  };  
+  const SafeImage = ({ src, alt, width, height, style }: React.ImgHTMLAttributes<HTMLImageElement>) => {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        style={style}
+      />
+    );
   };
-
-  const updatedColumns = [...columns, actionsColumn];
+  
+  const imageColumn: GridColDef = {
+    field: 'image',
+    type: 'actions',
+    headerName: 'Image',
+    width: 180,
+    cellClassName: 'actions',
+    getActions: ({ id }) => {
+      const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
+      if (isInEditMode) {
+        return [
+          <UploadButton
+            key={`${pathname}-${id}`}
+            onChange={(file: File) => handleImageUpload(id, file)}
+          />,
+        ];
+      }
+  
+      const row = rows.find((row) => row.id === id);
+      const imageUrl = row?.image || '/no-image.jpg';
+      const altText = row?.itemDescription || 'No description';
+  
+      return [
+        <SafeImage
+          key={`${pathname}-${id}`}
+          src={imageUrl}
+          alt={altText}
+          width={100}
+          height={38}
+          style={{ objectFit: 'cover' }}
+        />,
+      ];
+    },
+  };
+  
+  const updatedColumns = [...columns, imageColumn, actionsColumn];
 
   return (
     <Paper sx={{ p: 1, marginY: 2 }}>
@@ -234,19 +301,24 @@ export default function FullFeaturedCrudGrid({
         },
       }}
     >
-      <DataGrid
-        rows={rows}
-        columns={updatedColumns}
-        editMode="row"
-        rowModesModel={rowModesModel}
-        onRowModesModelChange={handleRowModesModelChange}
-        onRowEditStop={handleRowEditStop}
-        processRowUpdate={processRowUpdate}
-        slots={{ toolbar: EditToolbar }}
-        slotProps={{
-          toolbar: { setRows, setRowModesModel, defaultNewRow },
-        }}
-      />
+<DataGrid
+  rows={rows}
+  columns={updatedColumns}
+  editMode="row"
+  rowModesModel={rowModesModel}
+  onRowModesModelChange={handleRowModesModelChange}
+  onRowEditStop={handleRowEditStop}
+  processRowUpdate={processRowUpdate}
+  onProcessRowUpdateError={(error) => {
+    console.error('Error during row update:', error);
+    alert('An error occurred during row update. Please check the console for details.');
+  }}
+  slots={{ toolbar: EditToolbar }}
+  slotProps={{
+    toolbar: { setRows, setRowModesModel, defaultNewRow },
+  }}
+/>
+
     </Box>
     </Paper>
   );

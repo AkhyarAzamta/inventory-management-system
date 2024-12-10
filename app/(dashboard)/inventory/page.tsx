@@ -4,6 +4,7 @@ import { GridRowsProp, GridColDef } from '@mui/x-data-grid';
 import FullFeaturedCrudGrid from '@/components/data-table'; // Sesuaikan dengan path komponen Anda
 import CircularProgress from '@mui/material/CircularProgress';
 import Loading from '@/components/loading';
+import { update } from 'lodash';
 const initialRows: GridRowsProp = [];
 
 // Fungsi untuk mengakses API
@@ -18,6 +19,7 @@ async function fetchRows(): Promise<GridRowsProp> {
     unit: row.unit,
     group: row.group,
     classification: row.classification,
+    price: row.price,
     stock: row.stock,
     image: row.image,
     createdBy: row.createBy,
@@ -52,57 +54,11 @@ const columns: GridColDef[] = [
   },
   { field: 'group', headerName: 'Group', width: 180, editable: true, type: 'singleSelect', valueOptions: ['Lokal', 'Import', 'Random']},
   { field: 'classification', headerName: 'Classifications', width: 180, editable: true, type: 'singleSelect', valueOptions: ['Sparepart', 'Consumable', 'Assets'] },
-  { field: 'stock', headerName: 'Stock', type: 'number', width: 180, editable: true },
-  { field: 'image', headerName: 'Image', width: 180, editable: true },
-  { field: 'createdBy', headerName: 'Created By', width: 180, editable: true },
-  { field: 'updatedBy', headerName: 'Updated By', width: 180, editable: true },
-  { field: 'createdAt', headerName: 'Created At', type: 'date', width: 180, editable: true },
-  // {
-  //   field: 'actions',
-  //   type: 'actions',
-  //   headerName: 'Actions',
-  //   width: 100,
-  //   cellClassName: 'actions',
-  //   getActions: ({ id }) => {
-  //     const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
-
-  //     if (isInEditMode) {
-  //       return [
-  //         <GridActionsCellItem
-  //           icon={<SaveIcon />}
-  //           label="Save"
-  //           sx={{
-  //             color: 'primary.main',
-  //           }}
-  //           onClick={handleSaveClick(id)}
-  //         />,
-  //         <GridActionsCellItem
-  //           icon={<CancelIcon />}
-  //           label="Cancel"
-  //           className="textPrimary"
-  //           onClick={handleCancelClick(id)}
-  //           color="inherit"
-  //         />,
-  //       ];
-  //     }
-
-  //     return [
-  //       <GridActionsCellItem
-  //         icon={<EditIcon />}
-  //         label="Edit"
-  //         className="textPrimary"
-  //         onClick={handleEditClick(id)}
-  //         color="inherit"
-  //       />,
-  //       <GridActionsCellItem
-  //         icon={<DeleteIcon />}
-  //         label="Delete"
-  //         onClick={handleDeleteClick(id)}
-  //         color="inherit"
-  //       />,
-  //     ];
-  //   },
-  // },
+  { field: 'price', headerName: 'Price', type: 'number', width: 100, editable: true },
+  { field: 'stock', headerName: 'Stock', type: 'number', width: 100, editable: true },
+  // { field: 'createdBy', headerName: 'Created By', width: 180},
+  // { field: 'updatedBy', headerName: 'Updated By', width: 180},
+  // { field: 'createdAt', headerName: 'Created At', type: 'date', width: 180}
 ];
 export default function Inventory() {
   const [rows, setRows] = React.useState<GridRowsProp>(initialRows);
@@ -129,11 +85,13 @@ export default function Inventory() {
           unit: '', 
           group: '', 
           classification: '', 
+          price: '',
           stock: '', 
           image: '', 
-          createdBy: '', 
-          updatedBy: '', 
+          createdBy: 'admin', 
+          updatedBy: 'admin', 
           createdAt: '', 
+          updatedAt: '',
           isNew: true 
         })}
         title='Inventory'

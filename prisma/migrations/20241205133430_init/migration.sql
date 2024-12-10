@@ -2,12 +2,12 @@
 CREATE TABLE `Users` (
     `id` VARCHAR(36) NOT NULL,
     `fullname` VARCHAR(191) NOT NULL,
-    `username` VARCHAR(191) NOT NULL,
+    `email` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
     `role` VARCHAR(191) NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    UNIQUE INDEX `Users_username_key`(`username`),
+    UNIQUE INDEX `Users_email_key`(`email`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -69,7 +69,7 @@ CREATE TABLE `Inventory` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Employee` (
+CREATE TABLE `Employees` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `fullName` VARCHAR(191) NOT NULL,
     `address` VARCHAR(191) NULL,
@@ -117,7 +117,7 @@ ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_productionId_fkey` FOREIGN KEY
 ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_createBy_fkey` FOREIGN KEY (`createBy`) REFERENCES `Users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Productions` ADD CONSTRAINT `Productions_employeeId_fkey` FOREIGN KEY (`employeeId`) REFERENCES `Employee`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Productions` ADD CONSTRAINT `Productions_employeeId_fkey` FOREIGN KEY (`employeeId`) REFERENCES `Employees`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Productions` ADD CONSTRAINT `Productions_buildingId_fkey` FOREIGN KEY (`buildingId`) REFERENCES `Building`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

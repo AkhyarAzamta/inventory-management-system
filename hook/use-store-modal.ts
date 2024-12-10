@@ -51,7 +51,7 @@ export const useStoreModal = create<useStoreModalStore>((set) => ({
   ItemsId: 0,
   session: null,
   onOpen: () => set({ isOpen: true }),
-  onClose: () => set({ isOpen: false, isEdit: false }),
+  onClose: () => set({ isOpen: false}),
   onEdit: () => set({ isEdit: true }),
   onMounted: () => set({ isMounted: true }),
   setRowsItems: (data) => set({ rowsItems: data }), // Mengupdate rowsItems
