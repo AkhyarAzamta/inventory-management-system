@@ -24,8 +24,8 @@ CREATE TABLE `Items` (
     `stock` INTEGER NULL,
     `image` VARCHAR(191) NULL,
     `itemStatus` ENUM('Active', 'InActive', 'NotFound') NULL,
-    `createBy` VARCHAR(36) NOT NULL,
-    `updateBy` VARCHAR(36) NOT NULL,
+    `createdBy` VARCHAR(36) NOT NULL,
+    `updatedBy` VARCHAR(36) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -99,13 +99,7 @@ CREATE TABLE `Productions` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE `Items` ADD CONSTRAINT `Items_createBy_fkey` FOREIGN KEY (`createBy`) REFERENCES `Users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `Suppliers` ADD CONSTRAINT `Suppliers_createBy_fkey` FOREIGN KEY (`createBy`) REFERENCES `Users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_itemCodeId_fkey` FOREIGN KEY (`itemCodeId`) REFERENCES `Items`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Inventory` ADD CONSTRAINT `Inventory_idSupplier_fkey` FOREIGN KEY (`idSupplier`) REFERENCES `Suppliers`(`supplierId`) ON DELETE RESTRICT ON UPDATE CASCADE;

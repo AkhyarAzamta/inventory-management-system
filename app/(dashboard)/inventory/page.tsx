@@ -4,13 +4,14 @@ import { GridRowsProp, GridColDef } from '@mui/x-data-grid';
 import FullFeaturedCrudGrid from '@/components/data-table'; // Sesuaikan dengan path komponen Anda
 import CircularProgress from '@mui/material/CircularProgress';
 import Loading from '@/components/loading';
-import { update } from 'lodash';
+import { set, update } from 'lodash';
 const initialRows: GridRowsProp = [];
 
 // Fungsi untuk mengakses API
 async function fetchRows(): Promise<GridRowsProp> {
   const response = await fetch("/api/inventory");
   const data = await response.json();
+
   return data.map((row: any) => ({
     id: row.id, // Pastikan id ada
     itemCode: row.itemCode,
@@ -65,7 +66,7 @@ export default function Inventory() {
   React.useEffect(() => {
     fetchRows().then(data => {
       console.log("Rows set to state:", data);
-      setRows(data);
+        setRows(data);
     });
   }, []);
   if (rows.length === 0) {

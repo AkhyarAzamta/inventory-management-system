@@ -159,9 +159,14 @@ export default function FullFeaturedCrudGrid({
         console.log(response);
         console.log(newRow);
       } else {
-        await axios.put(`/api/inventory/${newRow.id}`, newRow);
+        console.log(newRow);
+        const response = await axios.patch(`/api/inventory/${newRow.itemCode}`, newRow);
         setRows((prevRows) =>
-          prevRows.map((row) => (row.id === newRow.id ? newRow : row))
+          prevRows.map((row) =>
+            row.id === newRow.id
+              ? { ...response.data, isNew: false }
+              : row
+          )
         );
       }
       return newRow;

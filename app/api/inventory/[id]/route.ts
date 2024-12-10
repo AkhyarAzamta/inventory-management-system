@@ -1,26 +1,66 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { Classifications, Group, PrismaClient, Units } from '@prisma/client';
 
-import { NextResponse } from 'next/server';
-import db from '@/lib/db';
+const prisma = new PrismaClient();
 
-export async function PUT(request: Request) {
-  const updatedItem = await request.json();
+// PATCH method to update an item
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const { id } = await params; // Ensure that params is awaited
   try {
-    const updatedData = await db.items.update({
-      where: { id: updatedItem.id },
-      data: updatedItem,
+    // Ensure the payload is present and valid
+    const payload = await req.json();
+    if (!payload || typeof payload !== 'object') {
+      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+    }
+
+    // Ensure the id is present
+    if (!id) {
+      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    }
+
+    // Perform the update in the database
+    const updatedItem = await prisma.items.update({
+      where: { itemCode: id }, // Using itemCode as the unique identifier
+      data: {
+        itemCode: payload.itemCode,
+        zahirCode: payload.zahirCode,
+        itemDescription: payload.itemDescription || null,
+        unit: payload.unit as Units,
+        group: payload.group as Group,
+        classification: payload.classification as Classifications,
+        price: payload.price ?? 0,
+        stock: payload.stock ?? 0,
+        image: payload.image ?? null,
+        itemStatus: payload.itemStatus,
+        updatedAt: new Date(),
+        createdBy: payload.createBy,
+        updatedBy: payload.updatedBy,
+      },
     });
-    return NextResponse.json(updatedData);
+
+    // Send response with the updated item
+    return NextResponse.json(updatedItem);
   } catch (error) {
     console.error('Error updating item:', error);
     return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: Request) {
-  const { id } = await request.json();
+// DELETE method to remove an item
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    await db.items.delete({ where: { id } });
-    return NextResponse.json({ message: 'Item deleted' });
+    const { id } = await params; // Ensure that params is awaited
+    if (!id) {
+      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    }
+
+    // Perform the delete in the database
+    const deletedItem = await prisma.items.delete({
+      where: { itemCode: id }, // Using itemCode as the unique identifier
+    });
+
+    // Send response with the deleted item
+    return NextResponse.json({ message: `Item with ID ${id} deleted successfully`, deletedItem });
   } catch (error) {
     console.error('Error deleting item:', error);
     return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });
