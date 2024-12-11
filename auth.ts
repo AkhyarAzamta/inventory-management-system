@@ -1,69 +1,64 @@
-import NextAuth, { AuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from "@prisma/client";
-import { compareSync } from "bcrypt-ts";
+import NextAuth from "next-auth"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { prisma } from "@/lib/prisma"
+import Credentials from "next-auth/providers/credentials"
+import { LoginSchema } from "@/lib/zod"
+import { compareSync } from "bcrypt-ts"
 
-const prisma = new PrismaClient();
-
-export const authOptions: AuthOptions = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
   session: {
-    strategy: "jwt", // Menggunakan JWT untuk sesi
+    strategy: "jwt", // Gunakan JWT untuk menyimpan session
+    maxAge: 30 * 24 * 60 * 60, // Durasi sesi (30 hari)
   },
-  secret: process.env.NEXTAUTH_SECRET,
+    pages: {
+    signIn: "/login",
+  },
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
+        email: {
+          label: "Email",
+          type: "email",
+          placeholder: "Email",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+          placeholder: "Password",
+        },
       },
-      async authorize(credentials) {
-        const { email, password } = credentials as {
-          email: string;
-          password: string;
-        };
-
-        // Cari user berdasarkan email
-        const user = await prisma.users.findUnique({
-          where: { email },
-        });
-
-        // Validasi user dan password
-        if (!user || !compareSync(password, user.password)) {
-          throw new Error("Invalid email or password");
+      authorize: async (credentials) => {
+        const validatedFields = LoginSchema.safeParse(credentials);
+        if (!validatedFields.success) {
+          throw new Error("Invalid input");
         }
-
-        return {
-          id: user.id.toString(),
-          name: user.fullname,
-          email: user.email,
-          role: user.role,
-        };
+      
+        const { email, password } = validatedFields.data;
+        const user = await prisma.user.findUnique({ where: { email } });
+      console.log(user);
+        if (!user || !user.password) {
+          throw new Error("User not found");
+        }
+      
+        const isPasswordValid = compareSync(password, user.password);
+        if (!isPasswordValid) {
+          throw new Error("Invalid credentials");
+        }
+      
+        return user; // Pastikan selalu return user jika berhasil
       },
+      
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      // Tambahkan user ke token jika ada
-      if (user) {
-        token.user = user;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      // Tambahkan user dari token ke session
-      if (token?.user) {
-        session.user = token.user as any; // Type assertion
-      }
-      return session;
-    },
     async redirect({ url, baseUrl }) {
-      // Redirect ke halaman admin
-      return `${baseUrl}/admin`;
+      // Redirect ke dashboard jika login berhasil
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      return `${baseUrl}/dashboard`; // Default redirect setelah login
     },
   },
-};
-
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
+});

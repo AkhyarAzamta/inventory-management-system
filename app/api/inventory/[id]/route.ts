@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Classifications, Group, PrismaClient, Units } from '@prisma/client';
-import db from '@/lib/db';
-
+import { prisma } from '@/lib/prisma';
 
 // PATCH method to update an item
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -19,7 +18,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     // Perform the update in the database
-    const updatedItem = await db.items.update({
+    const updatedItem = await prisma.items.update({
       where: { itemCode: id }, // Using itemCode as the unique identifier
       data: {
         itemCode: payload.itemCode,
@@ -55,7 +54,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     // Perform the delete in the database
-    const deletedItem = await db.items.delete({
+    const deletedItem = await prisma.items.delete({
       where: { itemCode: id }, // Using itemCode as the unique identifier
     });
 

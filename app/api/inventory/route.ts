@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { Units, Group, Classifications, ItemStatus } from '@prisma/client'; // Import enums from Prisma
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     const parsedData = inventoryItemSchema.parse(request);
 
     // After validation, save to the database using Prisma
-    const result = await db.items.create({
+    const result = await prisma.items.create({
       data: {
         itemCode: parsedData.itemCode,
         zahirCode: parsedData.zahirCode ?? null, // Default to null if undefined
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const inventory = await db.items.findMany();
+    const inventory = await prisma.items.findMany();
     console.log(inventory);
     return NextResponse.json(inventory, { status: 200 });
   } catch (error) {
