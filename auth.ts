@@ -5,14 +5,14 @@ import Credentials from "next-auth/providers/credentials"
 import { LoginSchema } from "@/lib/zod"
 import { compareSync } from "bcrypt-ts"
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+let nextAuth = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt", // Gunakan JWT untuk menyimpan session
     maxAge: 30 * 24 * 60 * 60, // Durasi sesi (30 hari)
   },
     pages: {
-    signIn: "/login",
+    signIn: "/register",
   },
   providers: [
     Credentials({
@@ -62,3 +62,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+export const { handlers, auth, signIn, signOut } = nextAuth;
+
+export default nextAuth;

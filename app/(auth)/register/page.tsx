@@ -10,7 +10,7 @@ const providers = [{ id: 'credentials', name: 'Email and Password' }];
 const signIn = async (provider: AuthProvider, formData?: FormData): Promise<AuthResponse> => {
   if (provider.id === 'credentials' && formData) {
     const result = await signInCredentials(formData);
-
+console.log(result)
     if (result?.error) {
       return {
         type: 'CredentialsSignin',

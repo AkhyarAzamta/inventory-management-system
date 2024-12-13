@@ -4,12 +4,12 @@ import { LoginSchema, RegisterSchema } from "@/lib/zod";
 import { compareSync, hashSync } from "bcrypt-ts";
 import { prisma } from "./prisma";
 import { redirect } from "next/navigation";
-import { signIn } from "@/auth";
+import { signIn as nextSignIn } from "@/auth";
+import { signIn } from "next-auth/react";
 
 // Fungsi Sign Up
 export const signUpCredentials = async (formData: FormData) => {
   const validatedFields = RegisterSchema.safeParse(Object.fromEntries(formData));
-
   if (!validatedFields.success) {
     return {
       error: validatedFields.error?.flatten().fieldErrors,
@@ -51,16 +51,25 @@ export const signInCredentials = async (formData: FormData) => {
 
   try {
     // Autentikasi menggunakan "credentials"
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: true,
-      callbackUrl: "/dashboard",
-    });
-    
+    // const result = await nextSignIn("credentials", {
+    //   email,
+    //   password,
+    //   redirect: true,
+    //   callbackUrl: "/dashboard",
+    // });
+    const user = await prisma.user.findUnique({ where: { email } });
+      console.log(user);
+        if (!user || !user.password) {
+          throw new Error("User not found");
+        }
+      
+        const isPasswordValid = compareSync(password, user.password);
+        if (!isPasswordValid) {
+          throw new Error("Invalid credentials");
+        }
     return {
       success: true,
-      data: result,
+      data: { email, password },
     };
   } catch (error) {
     // Tangani kesalahan
