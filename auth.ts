@@ -1,67 +1,68 @@
-import NextAuth from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma"
-import Credentials from "next-auth/providers/credentials"
-import { LoginSchema } from "@/lib/zod"
-import { compareSync } from "bcrypt-ts"
+import NextAuth, { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaClient } from "@prisma/client";
+import { compareSync } from "bcrypt-ts";
 
-let nextAuth = NextAuth({
-  adapter: PrismaAdapter(prisma),
+const prisma = new PrismaClient();
+
+export const authOptions: NextAuthOptions = {
   session: {
-    strategy: "jwt", // Gunakan JWT untuk menyimpan session
-    maxAge: 30 * 24 * 60 * 60, // Durasi sesi (30 hari)
+    strategy: "jwt",
   },
-    pages: {
-    signIn: "/register",
-  },
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
-    Credentials({
+    CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: {
-          label: "Email",
-          type: "email",
-          placeholder: "Email",
-        },
-        password: {
-          label: "Password",
-          type: "password",
-          placeholder: "Password",
-        },
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-      authorize: async (credentials) => {
-        const validatedFields = LoginSchema.safeParse(credentials);
-        if (!validatedFields.success) {
-          throw new Error("Invalid input");
-        }
-      
-        const { email, password } = validatedFields.data;
-        const user = await prisma.user.findUnique({ where: { email } });
-      console.log(user);
-        if (!user || !user.password) {
+      async authorize(credentials) {
+        const { email, password } = credentials as {
+          email: string;
+          password: string;
+        };
+
+        const user = await prisma.user.findUnique({
+          where: { email },
+        });
+        if (!user) {
           throw new Error("User not found");
         }
-      
-        const isPasswordValid = compareSync(password, user.password);
+
+        const isPasswordValid = await compareSync(password, user.password ?? '');
         if (!isPasswordValid) {
           throw new Error("Invalid credentials");
         }
-      
-        return user; // Pastikan selalu return user jika berhasil
+
+        return {
+          id: user.id.toString(),
+          name: user.name,
+          username: user.email,
+          role: user.role,
+        };
       },
-      
     }),
   ],
+  pages: {
+    error: "/auth/error", // Atur custom error page
+  },
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      // Redirect ke dashboard jika login berhasil
-      if (url.startsWith(baseUrl)) {
-        return url;
+    async jwt({ token, user }) {
+      if (user) {
+        token.user = user;
       }
-      return `${baseUrl}/dashboard`; // Default redirect setelah login
+      // console.log("Token JWT:", token); // Debug token di server
+      return token;
+    },
+    async session({ session, token }) {
+      if (token?.user) {
+        session.user = token.user as { id: string; name: string; email: string; role: string };
+      }
+      return session;
+    },
+    async redirect({ url, baseUrl }) {
+      return `${baseUrl}/`;
     },
   },
-});
-export const { handlers, auth, signIn, signOut } = nextAuth;
-
-export default nextAuth;
+};

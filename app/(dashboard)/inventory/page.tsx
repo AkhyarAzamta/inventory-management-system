@@ -5,12 +5,15 @@ import FullFeaturedCrudGrid from '@/components/data-table'; // Sesuaikan dengan 
 import CircularProgress from '@mui/material/CircularProgress';
 import Loading from '@/components/loading';
 import { set, update } from 'lodash';
+import { useSession } from 'next-auth/react';
+import axios from 'axios';
 const initialRows: GridRowsProp = [];
 
 // Fungsi untuk mengakses API
 async function fetchRows(): Promise<GridRowsProp> {
-  const response = await fetch("/api/inventory");
-  const data = await response.json();
+  const response = await axios.get("/api/items");
+  // const data = await response.json();
+  const data = response.data;
 
   return data.map((row: any) => ({
     id: row.id, // Pastikan id ada
@@ -25,7 +28,7 @@ async function fetchRows(): Promise<GridRowsProp> {
     image: row.image,
     createdBy: row.createBy,
     updatedBy: row.updateBy,
-    createdAt: new Date(row.createdAt),
+    // createdAt: new Date(row.createdAt),
   }));
 }
 const columns: GridColDef[] = [
@@ -63,6 +66,8 @@ const columns: GridColDef[] = [
 ];
 export default function Inventory() {
   const [rows, setRows] = React.useState<GridRowsProp>(initialRows);
+  const { data: session } = useSession();
+
   React.useEffect(() => {
     fetchRows().then(data => {
       console.log("Rows set to state:", data);
@@ -89,8 +94,8 @@ export default function Inventory() {
           price: '',
           stock: '', 
           image: '', 
-          createdBy: 'admin', 
-          updatedBy: 'admin', 
+          createdBy: session?.user?.name, 
+          updatedBy: session?.user?.name, 
           createdAt: '', 
           updatedAt: '',
           isNew: true 

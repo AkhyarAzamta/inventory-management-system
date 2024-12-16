@@ -90,7 +90,7 @@ model Items {
   updatedAt       DateTime        @updatedAt
   
   // userId String
-  user User @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  user User @relation(fields: [updatedBy], references: [id], onDelete: Cascade)
 }
 
 model Suppliers {

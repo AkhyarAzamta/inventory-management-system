@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   try {
     const request = await req.json();
-    const result = await db.employees.create({
+    const result = await prisma.employees.create({
       data: {
         fullName: request.fullName,
         address: request.address,

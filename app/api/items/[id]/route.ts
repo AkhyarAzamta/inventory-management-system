@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Classifications, Group, PrismaClient, Units } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { Classifications, Group, PrismaClient, Units } from '@prisma/client';
 
 // PATCH method to update an item
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -31,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         stock: payload.stock ?? 0,
         image: payload.image ?? null,
         itemStatus: payload.itemStatus,
-        updatedAt: new Date(),
+        // updatedAt: new Date(),
         createdBy: payload.createBy,
         updatedBy: payload.updatedBy,
       },

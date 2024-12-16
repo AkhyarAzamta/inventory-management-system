@@ -148,7 +148,7 @@ export default function FullFeaturedCrudGrid({
   const processRowUpdate = async (newRow: GridRowModel) => {
     try {
       if (newRow.isNew) {
-        const response = await axios.post('/api/inventory', newRow);
+        const response = await axios.post('/api/items', newRow);
         setRows((prevRows) =>
           prevRows.map((row) =>
             row.id === newRow.id
@@ -160,7 +160,7 @@ export default function FullFeaturedCrudGrid({
         console.log(newRow);
       } else {
         console.log(newRow);
-        const response = await axios.patch(`/api/inventory/${newRow.itemCode}`, newRow);
+        const response = await axios.patch(`/api/items/${newRow.itemCode}`, newRow);
         setRows((prevRows) =>
           prevRows.map((row) =>
             row.id === newRow.id

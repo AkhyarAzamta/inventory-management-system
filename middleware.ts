@@ -1,12 +1,17 @@
-export { auth as middleware } from "@/auth"
-
-export const config = {
-  matcher: ["/dashboard/:path*", "/api/:path*"],
-}
-
-// export { auth as middleware } from './auth';
+// export { auth as middleware } from "@/auth"
 
 // export const config = {
-//   // https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher
-//   matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
-// };
+//   matcher: ["/dashboard/:path*", "/api/:path*"],
+// }
+import { withAuth } from "next-auth/middleware";
+
+export default withAuth({
+  pages: {
+    signIn: "/login", // Redirect ke halaman login jika tidak autentik
+  },
+});
+
+export const config = {
+  matcher: ["/:path*"], // Sesuaikan path yang dilindungi
+  // matcher: ["/:path*", "/api/:path*"], // Sesuaikan path yang dilindungi
+};
