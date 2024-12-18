@@ -1,22 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  password      String?
+  role          String    @default("user")
+  accounts      Account[]
+  sessions      Session[]
+
+  items Items[]
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 model Users {
-  id            String          @id @default(uuid()) @db.VarChar(36) // Menggunakan VARCHAR untuk UUID
-  fullname      String
-  username      String          @unique
-  password      String
-  role          String
-  created_at    DateTime        @default(now())
-  items         Items[]         @relation("UserItems")
-  suppliers     Suppliers[]     @relation("UserSuppliers")
-  inventory     Inventory[]     @relation("UserInventory")
+  id        String      @id @default(uuid()) @db.VarChar(36)
+  fullname  String
+  email     String      @unique
+  password  String
+  role      String
+  createdAt DateTime    @default(now())
+  inventory Inventory[] @relation("UserInventory")
+  suppliers Suppliers[] @relation("UserSuppliers")
 }
 
 model Items {
@@ -30,29 +83,30 @@ model Items {
   price           Float?
   stock           Int?
   image           String?
-  itemStatus      ItemStatus?
-  createBy        String          @db.VarChar(36)
-  updateBy        String          @db.VarChar(36)
+  itemStatus      ItemStatus      @default(Active)
+  createdBy       String          @db.VarChar(36)
+  updatedBy       String          @db.VarChar(36)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
-
-  user      Users?      @relation("UserItems", fields: [createBy], references: [id])
-  inventory Inventory[]
+  
+  // userId String
+  user User @relation(fields: [updatedBy], references: [id], onDelete: Cascade)
 }
 
 model Suppliers {
-  supplierId   Int      @id @default(autoincrement())
+  supplierId   Int         @id @default(autoincrement())
   supplierName String
   address      String?
   phone        String?
   email        String?
-  createBy     String   @db.VarChar(36)
-  updateBy     String   @db.VarChar(36)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createBy     String      @db.VarChar(36)
+  updateBy     String      @db.VarChar(36)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  stock        Inventory[]
+  user         Users       @relation("UserSuppliers", fields: [createBy], references: [id])
 
-  stock  Inventory[]
-  user   Users?      @relation("UserSuppliers", fields: [createBy], references: [id])
+  @@index([createBy], map: "Suppliers_createBy_fkey")
 }
 
 model Inventory {
@@ -60,11 +114,9 @@ model Inventory {
   date         DateTime?
   idSupplier   Int
   itemCodeId   Int
-  items        Items        @relation(fields: [itemCodeId], references: [id])
-  suppliers    Suppliers    @relation(fields: [idSupplier], references: [supplierId])
   price        Float?
-  qty_in       Int? // Jumlah barang masuk
-  qty_out      Int? // Jumlah barang keluar
+  qtyIn        Int?
+  qtyOut       Int?
   image        String?
   productionId Int?
   description  String?
@@ -72,37 +124,42 @@ model Inventory {
   updateBy     String       @db.VarChar(36)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  user         Users        @relation("UserInventory", fields: [createBy], references: [id])
+  suppliers    Suppliers    @relation(fields: [idSupplier], references: [supplierId])
   productions  Productions? @relation(fields: [productionId], references: [id])
-  user         Users?       @relation("UserInventory", fields: [createBy], references: [id])
+
+  @@index([createBy], map: "Inventory_createBy_fkey")
+  @@index([idSupplier], map: "Inventory_idSupplier_fkey")
+  @@index([productionId], map: "Inventory_productionId_fkey")
 }
 
-model Employee {
-  id       Int     @id @default(autoincrement())
-  fullName String
-  address  String?
-  phone    String?
-  position String?
-  shift    Shift
-
+model Employees {
+  id          Int           @id @default(autoincrement())
+  fullName    String
+  address     String?
+  phone       String?
+  position    String?
+  shift       Shift
   productions Productions[]
 }
 
 model Building {
-  id      Int    @id @default(autoincrement())
-  machine String
+  id           Int           @id @default(autoincrement())
+  machine      String
   buildingName BuildingName
-
   productions  Productions[]
 }
 
 model Productions {
-  id         Int    @id @default(autoincrement())
+  id         Int         @id @default(autoincrement())
   employeeId Int
   buildingId Int
+  inventory  Inventory[]
+  building   Building    @relation(fields: [buildingId], references: [id])
+  employee   Employees   @relation(fields: [employeeId], references: [id])
 
-  employee  Employee    @relation(fields: [employeeId], references: [id])
-  building  Building    @relation(fields: [buildingId], references: [id])
-  inventory Inventory[]
+  @@index([buildingId], map: "Productions_buildingId_fkey")
+  @@index([employeeId], map: "Productions_employeeId_fkey")
 }
 
 enum BuildingName {
@@ -134,12 +191,6 @@ enum Classifications {
   Bearing
   Bolt
   Belt
-}
-
-enum Status {
-  Appoved
-  Rejected
-  Pending
 }
 
 enum ItemStatus {

@@ -27,7 +27,12 @@ import {
   gridExpandedSortedRowIdsSelector,
 } from '@mui/x-data-grid';
 import { createSvgIcon, Paper, Typography } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import axios from 'axios';
+import UploadButton from './atoms/upload-button';
+import { uploadImage } from '@/utils/file-uploader';
+import Image from 'next/image';
+// import InputFileUpload from './atoms/upload-image';
 
 type FullFeaturedCrudGridProps = {
   columns: GridColDef[];
@@ -52,19 +57,21 @@ const ExportIcon = createSvgIcon(
 const getFilteredRows = ({ apiRef }: GridCsvGetRowsToExportParams) =>
   gridExpandedSortedRowIdsSelector(apiRef);
 
+
 function EditToolbar(props: GridSlotProps['toolbar']) {
+  const pathname = usePathname();
   const { setRows, setRowModesModel, defaultNewRow } = props;
   const apiRef = useGridApiContext();
-
   const handleClick = () => {
     const id = Math.random().toString(36).substr(2, 9); // Generate random ID
+    console.log(pathname)
     setRows((oldRows) => [
       ...oldRows,
       defaultNewRow(id), // Use the reusable function
     ]);
     setRowModesModel((oldModel) => ({
       ...oldModel,
-      [id]: { mode: GridRowModes.Edit, fieldToFocus: 'name' },
+      [id]: { mode: GridRowModes.Edit, fieldToFocus: 'itemCode' },
     }));
   };
   const handleExport = (options: GridCsvExportOptions) =>
@@ -97,7 +104,9 @@ export default function FullFeaturedCrudGrid({
 }: FullFeaturedCrudGridProps) {
   const [rows, setRows] = React.useState(initialRows);
   const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>({});
+  const [loadingRowId, setLoadingRowId] = React.useState<GridRowId | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
     if (params.reason === GridRowEditStopReasons.rowFocusOut) {
       event.defaultMuiPrevented = true;
@@ -108,18 +117,23 @@ export default function FullFeaturedCrudGrid({
     setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
   };
   const handleViewClick = (id: GridRowId) => () => {
-    // setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
-    router.push(`/inventory/${id}`);
+    const data = rows.find((row) => row.id === id);
+    router.push(`/inventory/${data!.itemCode}`);
+  };
+  const handleSaveClick = (id: GridRowId) => async () => {
+    // console.log({ ...rowModesModel, [id]: { mode: GridRowModes.View } })
+    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
+  };
+  const handleDeleteClick = (id: GridRowId) => async () => {
+    try {
+      await axios.delete(`/api/items/${id}`);
+      setRows((prevRows) => prevRows.filter((row) => row.id !== id));
+      console.log(`Row ${id} deleted successfully.`);
+    } catch (error) {
+      console.error(`Error deleting row ${id}:`, error);
+    }
   };
   
-  const handleSaveClick = (id: GridRowId) => () => {
-    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
-    console.log(rows);
-  };
-
-  const handleDeleteClick = (id: GridRowId) => () => {
-    setRows(rows.filter((row) => row.id !== id));
-  };
 
   const handleCancelClick = (id: GridRowId) => () => {
     setRowModesModel({
@@ -133,15 +147,64 @@ export default function FullFeaturedCrudGrid({
     }
   };
 
-  const processRowUpdate = (newRow: GridRowModel) => {
-    const updatedRow = { ...newRow, isNew: false };
-    setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
-    return updatedRow;
+  const processRowUpdate = async (newRow: GridRowModel) => {
+    try {
+      if (newRow.isNew) {
+        const response = await axios.post('/api/items', newRow);
+
+        setRows((prevRows) =>
+          prevRows.map((row) =>
+            row.id === newRow.id
+              ? { ...response.data, isNew: false }
+              : row
+          )
+        );
+        console.log(response);
+        console.log(newRow);
+      } else {
+        console.log(newRow);
+        const response = await axios.patch(`/api/items/${newRow.itemCode}`, newRow);
+        setRows((prevRows) =>
+          prevRows.map((row) =>
+            row.id === newRow.id
+              ? { ...response.data, isNew: false }
+              : row
+          )
+        );
+      }
+      return newRow;
+    } catch (error) {
+      console.error('Error updating row:', error);
+      throw error;
+    }
   };
 
   const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
     setRowModesModel(newRowModesModel);
   };
+  const handleImageUpload = async (id: GridRowId, file: File) => {
+    try {
+      setLoadingRowId(id); // Set row ID yang sedang dalam proses upload
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('pathname', pathname);
+      console.log(formData, id);
+  
+      const response = await axios.post('/api/upload', formData);
+      console.log(response);
+  
+      setRows((prevRows) =>
+        prevRows.map((row) =>
+          row.id === id ? { ...row, image: response.data } : row
+        )
+      );
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setLoadingRowId(null); // Reset loading state setelah upload selesai
+    }
+  };
+  
 
   const actionsColumn: GridColDef = {
     field: 'actions',
@@ -151,7 +214,6 @@ export default function FullFeaturedCrudGrid({
     cellClassName: 'actions',
     getActions: ({ id }) => {
       const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
-
       if (isInEditMode) {
         return [
           <GridActionsCellItem
@@ -189,9 +251,57 @@ export default function FullFeaturedCrudGrid({
         />,
       ];
     },
+  };  
+  const SafeImage = ({ src, alt, width, height, style }: React.ImgHTMLAttributes<HTMLImageElement>) => {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        style={style}
+      />
+    );
   };
-
-  const updatedColumns = [...columns, actionsColumn];
+  
+  const imageColumn: GridColDef = {
+    field: 'image',
+    type: 'actions',
+    headerName: 'Image',
+    width: 180,
+    cellClassName: 'actions',
+    getActions: ({ id }) => {
+      const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
+      if (isInEditMode) {
+        return [
+          <UploadButton
+            key={`${pathname}-${id}`}
+            onChange={(file: File) => handleImageUpload(id, file)}
+            loading={loadingRowId === id} // Tampilkan loading jika ID cocok
+          />,
+        ];
+      }
+      
+      
+  
+      const row = rows.find((row) => row.id === id);
+      const imageUrl = row?.image || '/no-image.jpg';
+      const altText = row?.itemDescription || 'No description';
+  
+      return [
+        <SafeImage
+          key={`${pathname}-${id}`}
+          src={imageUrl}
+          alt={altText}
+          width={100}
+          height={38}
+          style={{ objectFit: 'cover' }}
+        />,
+      ];
+    },
+  };
+  
+  const updatedColumns = [...columns, imageColumn, actionsColumn];
 
   return (
     <Paper sx={{ p: 1, marginY: 2 }}>
@@ -210,19 +320,24 @@ export default function FullFeaturedCrudGrid({
         },
       }}
     >
-      <DataGrid
-        rows={rows}
-        columns={updatedColumns}
-        editMode="row"
-        rowModesModel={rowModesModel}
-        onRowModesModelChange={handleRowModesModelChange}
-        onRowEditStop={handleRowEditStop}
-        processRowUpdate={processRowUpdate}
-        slots={{ toolbar: EditToolbar }}
-        slotProps={{
-          toolbar: { setRows, setRowModesModel, defaultNewRow },
-        }}
-      />
+<DataGrid
+  rows={rows}
+  columns={updatedColumns}
+  editMode="row"
+  rowModesModel={rowModesModel}
+  onRowModesModelChange={handleRowModesModelChange}
+  onRowEditStop={handleRowEditStop}
+  processRowUpdate={processRowUpdate}
+  onProcessRowUpdateError={(error) => {
+    console.error('Error during row update:', error);
+    alert('An error occurred during row update. Please check the console for details.');
+  }}
+  slots={{ toolbar: EditToolbar }}
+  slotProps={{
+    toolbar: { setRows, setRowModesModel, defaultNewRow },
+  }}
+/>
+
     </Box>
     </Paper>
   );
