@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Classifications, Group, PrismaClient, Units } from '@prisma/client';
+import { deleteImage } from '@/utils/file-uploader';
 
 // PATCH method to update an item
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -46,20 +47,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // DELETE method to remove an item
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const { id } = params;
+
+  if (!id || isNaN(Number(id))) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+  }
+
   try {
-    const { id } = await params; // Ensure that params is awaited
-    if (!id) {
-      return NextResponse.json({ error: 'Item ID is required' }, { status: 400 });
+    const items = await prisma.items.findUnique({
+      where: { id: parseInt(id) },
+    })
+
+    if (!items) {
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+    } else if (items.image) {
+      await deleteImage(items.image);
     }
 
-    // Perform the delete in the database
     const deletedItem = await prisma.items.delete({
-      where: { itemCode: id }, // Using itemCode as the unique identifier
+      where: { id: parseInt(id) },
     });
-
-    // Send response with the deleted item
-    return NextResponse.json({ message: `Item with ID ${id} deleted successfully`, deletedItem });
+    return NextResponse.json(deletedItem);
   } catch (error) {
     console.error('Error deleting item:', error);
     return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 });

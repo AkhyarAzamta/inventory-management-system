@@ -58,11 +58,7 @@ console.log('Result :',result);
 
 export async function GET(req: NextRequest) {
   try {
-    const inventory = await prisma.items.findMany({
-      include: {
-        user: true
-      }
-    });
+    const inventory = await prisma.items.findMany();
     console.log('inventory',inventory);
     return NextResponse.json(inventory);
   } catch (error) {

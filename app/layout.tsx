@@ -41,6 +41,11 @@ export const NAVIGATION: Navigation = [
     icon: <InventoryIcon />,
     children: [
       {
+        segment: 'items',
+        title: 'Items',
+        icon: <ArchiveIcon />,
+      },
+      {
         segment: 'inbound',
         title: 'Inbound',
         icon: <ArchiveIcon />,

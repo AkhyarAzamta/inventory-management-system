@@ -5,7 +5,8 @@ import FullFeaturedCrudGrid from '@/components/data-table'; // Sesuaikan dengan 
 import {
   randomCreatedDate,
   randomTraderName,
-  randomId
+  randomId,
+  randomDate
 } from '@mui/x-data-grid-generator';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/DeleteOutlined';
@@ -28,7 +29,7 @@ import CancelIcon from '@mui/icons-material/Close';
 // ];
 
 const columns: GridColDef[] = [
-  { field: 'itemCode', headerName: 'ItemCode', width: 180, editable: true },
+  { field: 'date', headerName: 'Date', type: 'date', width: 180, editable: true },
   {
     field: 'zahirCode',
     headerName: 'Zahir Code',
@@ -66,7 +67,7 @@ const columns: GridColDef[] = [
 const rows: GridRowsProp = [
   {
     id: randomId(),
-    itemCode: randomTraderName(),
+    date: randomDate(new Date('2023-01-01'), new Date('2023-12-31')),
     zahirCode: randomTraderName(),
     itemDescription: randomTraderName(),
     unit: randomTraderName(),
@@ -90,7 +91,7 @@ export default function Inbound() {
       <FullFeaturedCrudGrid
         columns={columns}
         rows={rows}
-        defaultNewRow={(id) => ({ id, itemCode: '', zahirCode: '', itemDescription: '', unit: '', group: '', classification: '', inbound: '', outbound: '', stock: '', image: '', createdBy: '', updatedBy: '', createdAt: '', isNew: true })}
+        defaultNewRow={(id) => ({ id, date: '', zahirCode: '', itemDescription: '', unit: '', group: '', classification: '', inbound: '', outbound: '', stock: '', image: '', createdBy: '', updatedBy: '', createdAt: '', isNew: true })}
         title='Inventory Inbound'
       />
     </div>

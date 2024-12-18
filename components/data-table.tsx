@@ -104,6 +104,7 @@ export default function FullFeaturedCrudGrid({
 }: FullFeaturedCrudGridProps) {
   const [rows, setRows] = React.useState(initialRows);
   const [rowModesModel, setRowModesModel] = React.useState<GridRowModesModel>({});
+  const [loadingRowId, setLoadingRowId] = React.useState<GridRowId | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
@@ -125,13 +126,14 @@ export default function FullFeaturedCrudGrid({
   };
   const handleDeleteClick = (id: GridRowId) => async () => {
     try {
-      await axios.delete(`/api/inventory/${id}`); // Sesuaikan endpoint
-      setRows(rows.filter((row) => row.id !== id)); // Hapus dari UI hanya jika berhasil
+      await axios.delete(`/api/items/${id}`);
+      setRows((prevRows) => prevRows.filter((row) => row.id !== id));
       console.log(`Row ${id} deleted successfully.`);
     } catch (error) {
       console.error(`Error deleting row ${id}:`, error);
     }
-  };  
+  };
+  
 
   const handleCancelClick = (id: GridRowId) => () => {
     setRowModesModel({
@@ -149,6 +151,7 @@ export default function FullFeaturedCrudGrid({
     try {
       if (newRow.isNew) {
         const response = await axios.post('/api/items', newRow);
+
         setRows((prevRows) =>
           prevRows.map((row) =>
             row.id === newRow.id
@@ -181,19 +184,27 @@ export default function FullFeaturedCrudGrid({
   };
   const handleImageUpload = async (id: GridRowId, file: File) => {
     try {
+      setLoadingRowId(id); // Set row ID yang sedang dalam proses upload
       const formData = new FormData();
       formData.append('image', file);
       formData.append('pathname', pathname);
-      console.log(formData, id)
+      console.log(formData, id);
+  
       const response = await axios.post('/api/upload', formData);
       console.log(response);
+  
       setRows((prevRows) =>
-        prevRows.map((row) => (row.id === id ? { ...row, image: response.data } : row))
+        prevRows.map((row) =>
+          row.id === id ? { ...row, image: response.data } : row
+        )
       );
     } catch (error) {
       console.error('Error uploading image:', error);
+    } finally {
+      setLoadingRowId(null); // Reset loading state setelah upload selesai
     }
-  }
+  };
+  
 
   const actionsColumn: GridColDef = {
     field: 'actions',
@@ -266,9 +277,12 @@ export default function FullFeaturedCrudGrid({
           <UploadButton
             key={`${pathname}-${id}`}
             onChange={(file: File) => handleImageUpload(id, file)}
+            loading={loadingRowId === id} // Tampilkan loading jika ID cocok
           />,
         ];
       }
+      
+      
   
       const row = rows.find((row) => row.id === id);
       const imageUrl = row?.image || '/no-image.jpg';

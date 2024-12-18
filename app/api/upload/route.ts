@@ -38,19 +38,3 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to update image' }, { status: 500 });
   }
 }
-export async function DELETE(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const imagePath = searchParams.get('imagePath');
-  
-  if (!imagePath) {
-    return NextResponse.json({ error: "Image path is required" }, { status: 400 });
-  }
-
-  try {
-    await deleteImage(imagePath); // Hapus gambar
-    return NextResponse.json({ message: 'Image deleted successfully' });
-  } catch (error: any) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to delete image' }, { status: 500 });
-  }
-}
